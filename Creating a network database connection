@@ -1,0 +1,84 @@
+import mysql.connector
+from kivy.lang import Builder
+from kivymd.app import MDApp
+from kivymd.uix.button import MDRectangleFlatButton
+from kivymd.uix.boxlayout import MDBoxLayout
+from kivymd.uix.label import MDLabel
+from kivy.uix.textinput import TextInput
+
+KV = '''
+<MainWidget>:
+    orientation: 'vertical'
+    MDLabel:
+        text: "Create MySQL Database"
+        halign: 'center'
+        size_hint_y: None
+        height: dp(40)
+
+    TextInput:
+        id: db_name
+        hint_text: "Megradea"
+        multiline: False
+        size_hint_y: None
+        height: dp(40)
+
+    MDRectangleFlatButton:
+        text: "Create Database"
+        on_release: app.create_Megradea()
+        size_hint_y: None
+        height: dp(50)
+
+    MDLabel:
+        id: status_label
+        text: ""
+        halign: 'center'
+        size_hint_y: None
+        height: dp(40)
+'''
+
+class MainWidget(MDBoxLayout):
+    pass
+
+class MyApp(MDApp):
+    def build(self):
+        return Builder.load_string(KV)
+
+    def create_megradea(self):
+        db_name = self.root.ids.db_name.text
+        
+        try:
+            # Connect to MySQL server
+            connection = mysql.connector.connect(
+                host='localhost',  # Change if your MySQL is hosted elsewhere
+                user='Paul Wandendeya wamakiya',  # Replace with your MySQL username
+                password='123456'  # Replace with your MySQL password
+            )
+
+            cursor = connection.cursor()
+
+            # Create a database
+            cursor.execute(f"CREATE DATABASE IF NOT EXISTS {db_name};")
+
+            # Create a table
+            cursor.execute(f"""
+                USE {db_name};
+                CREATE TABLE IF NOT EXISTS users (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    name VARCHAR(100),
+                    password INT
+                );
+            """)
+
+            # Commit changes and close the connection
+            connection.commit()
+            cursor.close()
+            connection.close()
+
+            # Update the status label
+            self.root.ids.status_label.text = f"Database '{db_name}' and table created successfully!"
+
+        except mysql.connector.Error as err:
+            self.root.ids.status_label.text = f"Error: {err}"
+
+if __name__ == '__main__':
+    MyApp().run()
