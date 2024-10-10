@@ -1,0 +1,8 @@
+import mysql.connector;
+# create a new database connection;
+
+conn = mysql.connector;
+connect = ('Megradea');
+connect = ('Your_Database.mysql')
+# close the creation
+conn.close()
