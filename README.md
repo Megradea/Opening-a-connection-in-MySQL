@@ -1,2 +1,4 @@
 # New-database
-Open a new Network connection
+Open a new Network connection 
+
+Would you please assist me with  complete code for a server app implementing logic to Create a school students Enrolment table and display a form screen from student Enrolment table of  megradea database server. This code will create a table with column headings   "Date",  "SN", "Name", "Reporting Time AM", "Reporting Time PM", "Departure Time", "Comment" and multiple rows, it will also create a form screen with label   "Date",  "SN", "Name", "Reporting Time AM", "Reporting Time PM", "Departure Time", "Comment" and it associated text input field paired up-side and down-side placed horizontally in the layout and buttons for save, first, next, previous, last, update and delete placed horizontally in the layout of screen. This code will store data in the tables field and retrieve contents of  table fields and place the information in the appropriate text input fields, the will use python in kivymd to create a table and form in MySQL SERVER.
