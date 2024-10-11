@@ -1,0 +1,232 @@
+import mysql.connector
+from kivymd.app import MDApp
+from kivy.lang import Builder
+from kivy.properties import ListProperty, StringProperty
+from kivymd.uix.dialog import MDDialog
+from kivymd.uix.button import MDFlatButton, MDRaisedButton
+
+KV = '''
+MDScreen:
+    MDBoxLayout:
+        orientation: 'vertical'
+        padding: dp(10)
+        spacing: dp(10)
+
+        MDLabel:
+            text: "Student Enrollment Form"
+            halign: "center"
+            font_style: "H5"
+
+        MDTextField:
+            id: date_field
+            hint_text: "Date (YYYY-MM-DD)"
+            size_hint_y: None
+            height: dp(40)
+
+        MDTextField:
+            id: sn_field
+            hint_text: "SN"
+            size_hint_y: None
+            height: dp(40)
+
+        MDTextField:
+            id: name_field
+            hint_text: "Name"
+            size_hint_y: None
+            height: dp(40)
+
+        MDTextField:
+            id: reporting_am_field
+            hint_text: "Reporting Time AM (HH:MM:SS)"
+            size_hint_y: None
+            height: dp(40)
+
+        MDTextField:
+            id: reporting_pm_field
+            hint_text: "Reporting Time PM (HH:MM:SS)"
+            size_hint_y: None
+            height: dp(40)
+
+        MDTextField:
+            id: departure_time_field
+            hint_text: "Departure Time (HH:MM:SS)"
+            size_hint_y: None
+            height: dp(40)
+
+        MDTextField:
+            id: comment_field
+            hint_text: "Comment"
+            size_hint_y: None
+            height: dp(40)
+
+        MDBoxLayout:
+            orientation: 'horizontal'
+            spacing: dp(10)
+            size_hint_y: None
+            height: dp(50)
+
+            MDRaisedButton:
+                text: "Save"
+                on_release: app.save_record()
+
+            MDRaisedButton:
+                text: "First"
+                on_release: app.navigate_first()
+
+            MDRaisedButton:
+                text: "Next"
+                on_release: app.navigate_next()
+
+            MDRaisedButton:
+                text: "Previous"
+                on_release: app.navigate_previous()
+
+            MDRaisedButton:
+                text: "Last"
+                on_release: app.navigate_last()
+
+            MDRaisedButton:
+                text: "Update"
+                on_release: app.update_record()
+
+            MDRaisedButton:
+                text: "Delete"
+                on_release: app.delete_record()
+'''
+
+class StudentEnrollmentApp(MDApp):
+    records = ListProperty()
+    current_index = StringProperty("0")
+
+    def build(self):
+        self.load_records()
+        return Builder.load_string(KV)
+
+    def connect_db(self):
+        return mysql.connector.connect(
+            host='localhost',
+            user='your_username',  # Replace with your MySQL username
+            password='your_password',  # Replace with your MySQL password
+            database='megradea'
+        )
+
+    def load_records(self):
+        self.records = []
+        try:
+            conn = self.connect_db()
+            cursor = conn.cursor(dictionary=True)
+            cursor.execute("SELECT * FROM enrollment")
+            self.records = cursor.fetchall()
+            if self.records:
+                self.current_index = "0"
+                self.load_fields()
+            conn.close()
+        except Exception as e:
+            self.show_dialog("Error", str(e))
+
+    def load_fields(self):
+        record = self.records[int(self.current_index)]
+        self.root.ids.date_field.text = record["date"].strftime('%Y-%m-%d')
+        self.root.ids.sn_field.text = record["sn"]
+        self.root.ids.name_field.text = record["name"]
+        self.root.ids.reporting_am_field.text = str(record["reporting_time_am"])
+        self.root.ids.reporting_pm_field.text = str(record["reporting_time_pm"])
+        self.root.ids.departure_time_field.text = str(record["departure_time"])
+        self.root.ids.comment_field.text = record["comment"]
+
+    def save_record(self):
+        try:
+            conn = self.connect_db()
+            cursor = conn.cursor()
+            cursor.execute(
+                "INSERT INTO enrollment (date, sn, name, reporting_time_am, reporting_time_pm, departure_time, comment) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                (
+                    self.root.ids.date_field.text,
+                    self.root.ids.sn_field.text,
+                    self.root.ids.name_field.text,
+                    self.root.ids.reporting_am_field.text,
+                    self.root.ids.reporting_pm_field.text,
+                    self.root.ids.departure_time_field.text,
+                    self.root.ids.comment_field.text
+                )
+            )
+            conn.commit()
+            self.show_dialog("Success", "Record saved successfully.")
+            self.load_records()
+            conn.close()
+        except Exception as e:
+            self.show_dialog("Error", str(e))
+
+    def navigate_first(self):
+        if self.records:
+            self.current_index = "0"
+            self.load_fields()
+
+    def navigate_next(self):
+        if self.records and int(self.current_index) < len(self.records) - 1:
+            self.current_index = str(int(self.current_index) + 1)
+            self.load_fields()
+
+    def navigate_previous(self):
+        if self.records and int(self.current_index) > 0:
+            self.current_index = str(int(self.current_index) - 1)
+            self.load_fields()
+
+    def navigate_last(self):
+        if self.records:
+            self.current_index = str(len(self.records) - 1)
+            self.load_fields()
+
+    def update_record(self):
+        try:
+            conn = self.connect_db()
+            cursor = conn.cursor()
+            index = int(self.current_index)
+            cursor.execute(
+                "UPDATE enrollment SET date=%s, sn=%s, name=%s, reporting_time_am=%s, reporting_time_pm=%s, departure_time=%s, comment=%s WHERE id=%s",
+                (
+                    self.root.ids.date_field.text,
+                    self.root.ids.sn_field.text,
+                    self.root.ids.name_field.text,
+                    self.root.ids.reporting_am_field.text,
+                    self.root.ids.reporting_pm_field.text,
+                    self.root.ids.departure_time_field.text,
+                    self.root.ids.comment_field.text,
+                    self.records[index]['id']
+                )
+            )
+            conn.commit()
+            self.show_dialog("Success", "Record updated successfully.")
+            self.load_records()
+            conn.close()
+        except Exception as e:
+            self.show_dialog("Error", str(e))
+
+    def delete_record(self):
+        try:
+            conn = self.connect_db()
+            cursor = conn.cursor()
+            index = int(self.current_index)
+            cursor.execute("DELETE FROM enrollment WHERE id=%s", (self.records[index]['id'],))
+            conn.commit()
+            self.show_dialog("Success", "Record deleted successfully.")
+            self.load_records()
+            conn.close()
+        except Exception as e:
+            self.show_dialog("Error", str(e))
+
+    def show_dialog(self, title, text):
+        dialog = MDDialog(
+            title=title,
+            text=text,
+            buttons=[
+                MDFlatButton(
+                    text="Close",
+                    on_release=lambda x: dialog.dismiss()
+                ),
+            ],
+        )
+        dialog.open()
+
+if __name__ == "__main__":
+    StudentEnrollmentApp().run()
